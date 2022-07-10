@@ -1,0 +1,8 @@
+"""
+On the left is what the name is in Master, right is EG
+This mapping is used in case the names are different (Dave/David etc)
+"""
+NAMES_MAPPING = {
+    'Name, In, Master, Scoreboard': 'Name, In, England, Golf',
+    'Smith, Johnny': 'Smith, John',
+}

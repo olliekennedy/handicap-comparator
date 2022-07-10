@@ -1,0 +1,19 @@
+"""These are your normal login details for My England Golf and Master Scoreboard"""
+EG_MEMBERSHIP_NUMBER = '9375023752'
+EG_PASSWORD = 'myegpassword'
+MASTER_SCOREBOARD_PASSWORD = 'masterscoreboardpassword'
+
+"""Login to your society/club on https://www.masterscoreboard.co.uk/ and the CWID is the six digit number in the URL"""
+MASTER_SCOREBOARD_CWID = '123456'
+
+"""
+Find your club's England Golf Club ID
+1. On Google Chrome, login to My England Golf - https://members.whsplatform.englandgolf.org/
+   a. This should leave you in 'My Overview'
+2. Right click a blank bit of the page and click 'Inspect'
+3. Click the 'Network' tab in the top bar of the inspect window
+4. Start typing at least 3 characters of someone's name you know at your club in the 'Member Search' box, but don't hit enter!
+5. A new network event should show on the inspect window called something like 'FindPotentialFriends', click it once
+6. You should see a URL under 'General -> Request URL' and in this you will find the 6 digit club ID
+"""
+EG_CLUB_ID = '223923'
