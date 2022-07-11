@@ -27,7 +27,7 @@ This tool allows you compare the handicaps held for players in Master Scoreboard
 
 ### Dealing with players who have different names in Master and EG
 
-These players will show in the file 'problem-names.txt' indicating that either:
+After running the script, these players will show in the file 'problem-names.txt' indicating that either:
 - They don't exist on England Golf
 - The name they use on England Golf is different to Master Scoreboard
 
