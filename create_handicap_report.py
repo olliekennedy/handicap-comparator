@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
-import csv
 import json
 import os
 
+import pandas as pd
 import requests
 from bs4 import BeautifulSoup
-import pandas as pd
 
 from config import MASTER_SCOREBOARD_CWID, EG_CLUB_ID, MASTER_SCOREBOARD_PASSWORD, EG_MEMBERSHIP_NUMBER, EG_PASSWORD
 from names_mapping import NAMES_MAPPING
@@ -64,20 +63,21 @@ def get_course_handicap(player):
 
 
 def write_to_files(player_handicap_data):
-    with open('handicap-report.csv', 'w') as f:
-        writer = csv.writer(f)
-        writer.writerow(['Name', 'Course Handicap', 'Master Handicap', 'Master higher?'])
+    lines = []
+    for name in player_handicap_data:
+        lines.append(formatted_row_from(name, player_handicap_data))
+    dataframe = pd.DataFrame(lines, columns=['Name', 'Course Handicap', 'Master Handicap', 'Master higher?'])
+    dataframe.index = range(1, dataframe.shape[0] + 1)
+    dataframe.to_excel('handicap-report.xlsx', index=False)
 
-        for name in player_handicap_data:
-            course_raw = player_handicap_data[name]['course']
-            master_raw = player_handicap_data[name]['master']
-            diff = higher_or_lower(course_raw, master_raw)
-            course_handicap = add_plus_to_plus_handicaps(course_raw)
-            master_handicap = add_plus_to_plus_handicaps(master_raw)
 
-            row = [name, course_handicap, master_handicap, diff]
-            writer.writerow(row)
-    convert_csv_to_xls()
+def formatted_row_from(name, player_handicap_data):
+    course_raw = player_handicap_data[name]['course']
+    master_raw = player_handicap_data[name]['master']
+    diff = higher_or_lower(course_raw, master_raw)
+    course_handicap = add_plus_to_plus_handicaps(course_raw)
+    master_handicap = add_plus_to_plus_handicaps(master_raw)
+    return [name, course_handicap, master_handicap, diff]
 
 
 def higher_or_lower(course, master):
@@ -101,14 +101,6 @@ def add_plus_to_plus_handicaps(course_raw):
         else:
             course_handicap = course_raw
     return course_handicap
-
-
-def convert_csv_to_xls():
-    csv_file = pd.read_csv('handicap-report.csv')
-    gfg = pd.ExcelWriter('handicap-report.xls')
-    csv_file.to_excel(gfg, index=False)
-    gfg.save()
-    os.remove('handicap-report.csv')
 
 
 def login_to_master_scoreboard():
