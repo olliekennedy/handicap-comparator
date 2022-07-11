@@ -156,11 +156,23 @@ def get_handicaps_from_master():
 
 def get_handicaps_from_eg(master_handicaps, names):
     session = login_to_eg(EG_MEMBERSHIP_NUMBER, EG_PASSWORD)
+    problem_names = []
     for name in names:
         found_player = find_player(session, name)
         if len(json.loads(found_player.content)['Records']) == 1:
             master_handicaps[name]['course'] = get_course_handicap(found_player)
+        else:
+            problem_names.append(name)
+    write_lines_to_file(problem_names)
     return master_handicaps
+
+
+def write_lines_to_file(problem_names):
+    if os.path.exists('problem-names.txt'):
+        os.remove('problem-names.txt')
+    with open('problem-names.txt', 'w') as file:
+        for name in problem_names:
+            file.write(name + '\n')
 
 
 def main():
