@@ -6,16 +6,16 @@ This tool allows you compare the handicaps held for players in Master Scoreboard
 **Windows**
 - Clone this repo
 - Get the [latest Python 3](https://apps.microsoft.com/store/detail/python-310/9PJPW5LDXLZ5)
-- Create a copy of both config.py.example and names_mapping.py.example, removing the .example file extensions
-  - This should leave you with config.py and names_mapping.py
-  - Change each of the values to your own according to the instructions in the files
+- Create a copy of both _**config.py.example**_ and _**names_mapping.py.example**_, removing the _**.example**_ file extensions
+  - This should leave you with _**config.py**_ and _**names_mapping.py**_
+  - In config.py, change each of the values to your own according to the instructions in the file
 - Double click ***setup.bat***
 
 **Mac**
 - Clone this repo
 - Install python3 if you don't have the command line developer tools installed
-- Create a copy of both config.py.example and names_mapping.py.example, removing the .example file extensions
-  - This should leave you with config.py and names_mapping.py
+- Create a copy of both _**config.py.example**_ and _**names_mapping.py.example**_, removing the _**.example**_ file extensions
+  - This should leave you with _**config.py**_ and _**names_mapping.py**_
   - In config.py, change each of the values to your own according to the instructions in the file
 - `cd` to the project in terminal and `pip install -r .\requirements.txt`
 
