@@ -18,7 +18,7 @@ EG_PLAYER_SEARCH_API_URL = 'https://members.whsplatform.englandgolf.org/api/memb
 EG_LOGIN_URL = 'https://members.whsplatform.englandgolf.org/layouts/terraces_golfnz/Template.aspx?page=my+golf+login'
 
 
-def login_to_eg(email, password):
+def login_to_eg():
     session = requests.Session()
     login_soup = BeautifulSoup(session.get(EG_LOGIN_URL, headers=HEADERS).content, features="html.parser")
     login_data = {
@@ -29,8 +29,8 @@ def login_to_eg(email, password):
         '__SCROLLPOSITIONX': '0',
         '__SCROLLPOSITIONY': '0',
         '__EVENTVALIDATION': (login_soup.find('input', attrs={'name': '__EVENTVALIDATION'})['value']),
-        'ctl36$tbMembershipNumber': email,
-        'ctl36$tbPassword': password,
+        'ctl36$tbMembershipNumber': EG_MEMBERSHIP_NUMBER,
+        'ctl36$tbPassword': EG_PASSWORD,
         'ctl36$btnLogin': 'Login'
     }
     session.post(EG_LOGIN_URL, data=login_data)
@@ -62,22 +62,20 @@ def get_course_handicap(player):
     return str(convert_index_to_course(index, 130))
 
 
-def write_to_files(player_handicap_data):
-    lines = []
-    for name in player_handicap_data:
-        lines.append(formatted_row_from(name, player_handicap_data))
+def write_to_files(master_handicaps, eg_handicaps):
+    lines = [formatted_row_from(name, master_handicaps, eg_handicaps) for name in master_handicaps]
     dataframe = pd.DataFrame(lines, columns=['Name', 'Course Handicap', 'Master Handicap', 'Master higher?'])
     dataframe.index = range(1, dataframe.shape[0] + 1)
     dataframe.to_excel('handicap-report.xlsx', index=False)
 
 
-def formatted_row_from(name, player_handicap_data):
-    course_raw = player_handicap_data[name]['course']
-    master_raw = player_handicap_data[name]['master']
-    diff = higher_or_lower(course_raw, master_raw)
+def formatted_row_from(name, master_handicaps, eg_handicaps):
+    course_raw = eg_handicaps[name] if name in eg_handicaps else ''
+    master_raw = master_handicaps[name]
+    master_higher_or_lower = higher_or_lower(course_raw, master_raw)
     course_handicap = add_plus_to_plus_handicaps(course_raw)
     master_handicap = add_plus_to_plus_handicaps(master_raw)
-    return [name, course_handicap, master_handicap, diff]
+    return [name, course_handicap, master_handicap, master_higher_or_lower]
 
 
 def higher_or_lower(course, master):
@@ -142,21 +140,22 @@ def get_handicaps_from_master():
             handicap = str(-int(float(handicap[1:])))
         else:
             handicap = str(int(float(handicap)))
-        results[row.select_one('td').text] = {'course': '', 'master': handicap}
+        results[row.select_one('td').text] = handicap
     return results
 
 
-def get_handicaps_from_eg(master_handicaps, names):
-    session = login_to_eg(EG_MEMBERSHIP_NUMBER, EG_PASSWORD)
+def get_handicaps_from_eg(names):
+    session = login_to_eg()
     problem_names = []
+    eg_handicaps = {}
     for name in names:
         found_player = find_player(session, name)
         if len(json.loads(found_player.content)['Records']) == 1:
-            master_handicaps[name]['course'] = get_course_handicap(found_player)
+            eg_handicaps[name] = get_course_handicap(found_player)
         else:
             problem_names.append(name)
     write_lines_to_file(problem_names)
-    return master_handicaps
+    return eg_handicaps
 
 
 def write_lines_to_file(problem_names):
@@ -170,8 +169,8 @@ def write_lines_to_file(problem_names):
 def main():
     master_handicaps = get_handicaps_from_master()
     names = master_handicaps.keys()
-    player_handicap_data = get_handicaps_from_eg(master_handicaps, names)
-    write_to_files(player_handicap_data)
+    eg_handicaps = get_handicaps_from_eg(names)
+    write_to_files(master_handicaps, eg_handicaps)
 
 
 if __name__ == '__main__':
