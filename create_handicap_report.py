@@ -47,7 +47,7 @@ def convert_index_to_course(index) -> int:
     return -course_hcp if index[0] == '+' else course_hcp
 
 
-def write_to_files(master_handicaps, eg_handicaps):
+def write_handicaps_to_files(master_handicaps, eg_handicaps):
     lines = [formatted_row_from(name, master_handicaps, eg_handicaps) for name in master_handicaps]
     dataframe = pd.DataFrame(lines, columns=['Name', 'Course Handicap', 'Master Handicap', 'Master higher?'])
     dataframe.index = range(1, dataframe.shape[0] + 1)
@@ -154,11 +154,11 @@ def get_handicaps_from_eg(names) -> dict[str, str]:
         else:
             print("WARNING: failed to find player with name " + name + " on England Golf")
             problem_names.append(name)
-    write_lines_to_file(problem_names)
+    write_problem_names_file(problem_names)
     return eg_handicaps
 
 
-def write_lines_to_file(problem_names):
+def write_problem_names_file(problem_names):
     if os.path.exists('problem-names.txt'):
         os.remove('problem-names.txt')
     with open('problem-names.txt', 'w') as file:
@@ -170,7 +170,7 @@ def main():
     master_handicaps = get_handicaps_from_master()
     names = master_handicaps.keys()
     eg_handicaps = get_handicaps_from_eg(names)
-    write_to_files(master_handicaps, eg_handicaps)
+    write_handicaps_to_files(master_handicaps, eg_handicaps)
 
 
 if __name__ == '__main__':
