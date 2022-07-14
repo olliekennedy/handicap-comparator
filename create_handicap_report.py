@@ -6,7 +6,7 @@ import pandas as pd
 import requests
 from bs4 import BeautifulSoup
 
-from config import MASTER_SCOREBOARD_CWID, EG_CLUB_ID, MASTER_SCOREBOARD_PASSWORD, EG_MEMBERSHIP_NUMBER, EG_PASSWORD
+from config import *
 from names_mapping import NAMES_MAPPING
 
 HEADERS = {
@@ -16,7 +16,6 @@ HEADERS = {
 MASTER_SCOREBOARD_HANDICAP_URL = 'https://www.masterscoreboard.co.uk/results/HandicapList.php?CWID=' + MASTER_SCOREBOARD_CWID
 EG_PLAYER_SEARCH_API_URL = 'https://members.whsplatform.englandgolf.org/api/member/FindPotentialFriends'
 EG_LOGIN_URL = 'https://members.whsplatform.englandgolf.org/layouts/terraces_golfnz/Template.aspx?page=my+golf+login'
-SLOPE = 130
 
 
 def login_to_eg() -> requests.Session:
@@ -43,7 +42,7 @@ def get_player_records(s, params):
 
 
 def convert_index_to_course(index) -> int:
-    course_hcp = int(round((float(index) * (float(SLOPE)) / float(113))))
+    course_hcp = int(round((float(index) * (float(SLOPE_INDEX)) / float(113))))
     return -course_hcp if index[0] == '+' else course_hcp
 
 

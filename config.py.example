@@ -8,12 +8,10 @@ MASTER_SCOREBOARD_CWID = '123456'
 
 """
 Find your club's England Golf Club ID
-1. On Google Chrome, login to My England Golf - https://members.whsplatform.englandgolf.org/
-   a. This should leave you in 'My Overview'
-2. Right click a blank bit of the page and click 'Inspect'
-3. Click the 'Network' tab in the top bar of the inspect window
-4. Start typing at least 3 characters of someone's name you know at your club in the 'Member Search' box, but don't hit enter!
-5. A new network event should show on the inspect window called something like 'FindPotentialFriends', click it once
-6. You should see a URL under 'General -> Request URL' and in this you will find the 6 digit club ID
+1. Search for your golf club with this online tool: https://www.randa.org/course-handicap-calculator
+2. A 7 digit code will appear in brackets next to the name of the golf club. The EG_CLUB_ID is the first 6 digits only.
 """
 EG_CLUB_ID = '223923'
+
+"""Your club's slope index - use the online tool to find it: https://www.randa.org/course-handicap-calculator"""
+SLOPE_INDEX = 130
