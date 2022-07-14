@@ -58,11 +58,6 @@ def convert_index_to_course(index) -> int:
     return -course_hcp if index[0] == '+' else course_hcp
 
 
-def get_course_handicap(player_content):
-    index = json.loads(player_content)['Records'][0]['HandicapIndexText']
-    return str(convert_index_to_course(index))
-
-
 def write_to_files(master_handicaps, eg_handicaps):
     lines = [formatted_row_from(name, master_handicaps, eg_handicaps) for name in master_handicaps]
     dataframe = pd.DataFrame(lines, columns=['Name', 'Course Handicap', 'Master Handicap', 'Master higher?'])
@@ -158,9 +153,10 @@ def get_handicaps_from_eg(names):
     problem_names = []
     eg_handicaps = {}
     for name in names:
-        found_player = find_player(session, name)
-        if len(json.loads(found_player.content)['Records']) == 1:
-            eg_handicaps[name] = get_course_handicap(found_player.content)
+        found_players = json.loads(find_player(session, name).content)['Records']
+        if len(found_players) == 1:
+            index = found_players[0]['HandicapIndexText']
+            eg_handicaps[name] = str(convert_index_to_course(index))
         else:
             problem_names.append(name)
     write_lines_to_file(problem_names)
