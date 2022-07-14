@@ -19,7 +19,7 @@ EG_LOGIN_URL = 'https://members.whsplatform.englandgolf.org/layouts/terraces_gol
 SLOPE = 130
 
 
-def login_to_eg():
+def login_to_eg() -> requests.Session:
     session = requests.Session()
     login_soup = BeautifulSoup(session.get(EG_LOGIN_URL, headers=HEADERS).content, features="html.parser")
     login_data = {
@@ -38,19 +38,20 @@ def login_to_eg():
     return session
 
 
-def find_player(s, name):
+def find_player(s, name) -> list:
     search_name = NAMES_MAPPING[name] if name in NAMES_MAPPING else name
     params = {'clubId': EG_CLUB_ID, 'searchName': search_name, 'userPassportId': ''}
-    player = s.get(
-        url=EG_PLAYER_SEARCH_API_URL,
-        params=params
-    )
-    if len(json.loads(player.content)['Records']) > 1:
+    player = get_player_records(s, params)
+    if len(player) > 1:
         print("WARNING: too many results for search " + name + " on England Golf")
-    if not json.loads(player.content)['Records']:
+    if not player:
         print("WARNING: failed to find player with name " + name + " on England Golf")
 
     return player
+
+
+def get_player_records(s, params):
+    return json.loads(s.get(url=EG_PLAYER_SEARCH_API_URL, params=params).content)['Records']
 
 
 def convert_index_to_course(index) -> int:
@@ -65,7 +66,7 @@ def write_to_files(master_handicaps, eg_handicaps):
     dataframe.to_excel('handicap-report.xlsx', index=False)
 
 
-def formatted_row_from(name, master_handicaps, eg_handicaps):
+def formatted_row_from(name, master_handicaps, eg_handicaps) -> list[str, str, str, str]:
     course_raw = eg_handicaps[name] if name in eg_handicaps else ''
     master_raw = master_handicaps[name]
     higher_or_lower = master_higher_or_lower(course=course_raw, master=master_raw)
@@ -82,7 +83,7 @@ DIFF = {
 }
 
 
-def master_higher_or_lower(course, master):
+def master_higher_or_lower(course, master) -> str:
     if course and master:
         if int(master) > int(course):
             diff = 'higher'
@@ -95,7 +96,7 @@ def master_higher_or_lower(course, master):
     return DIFF[diff]
 
 
-def add_plus_to_plus_handicaps(course_raw):
+def add_plus_to_plus_handicaps(course_raw) -> str:
     course_handicap = ''
     if course_raw:
         if int(course_raw) < 0:
@@ -105,7 +106,7 @@ def add_plus_to_plus_handicaps(course_raw):
     return course_handicap
 
 
-def login_to_master_scoreboard():
+def login_to_master_scoreboard() -> requests.Session:
     login_url = 'https://www.masterscoreboard.co.uk/SocietyIndex.php?CWID=' + MASTER_SCOREBOARD_CWID
 
     s = requests.Session()
@@ -122,7 +123,8 @@ def login_to_master_scoreboard():
         'sec-ch-ua': '".Not/A)Brand";v="99", "Google Chrome";v="103", "Chromium";v="103"',
         'sec-ch-ua-mobile': '?0',
         'sec-ch-ua-platform': '"macOS"',
-        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36'
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) '
+                      'Chrome/103.0.0.0 Safari/537.36 '
     }
 
     full_login_url = 'https://www.masterscoreboard.co.uk/' + login_path
@@ -131,7 +133,7 @@ def login_to_master_scoreboard():
     return s
 
 
-def get_handicaps_from_master():
+def get_handicaps_from_master() -> dict[str, str]:
     session = login_to_master_scoreboard()
     response = session.get(MASTER_SCOREBOARD_HANDICAP_URL, headers=HEADERS)
     handicap_soup = BeautifulSoup(response.content, features="html.parser")
@@ -148,12 +150,12 @@ def get_handicaps_from_master():
     return results
 
 
-def get_handicaps_from_eg(names):
+def get_handicaps_from_eg(names) -> dict[str, str]:
     session = login_to_eg()
     problem_names = []
     eg_handicaps = {}
     for name in names:
-        found_players = json.loads(find_player(session, name).content)['Records']
+        found_players = find_player(session, name)
         if len(found_players) == 1:
             index = found_players[0]['HandicapIndexText']
             eg_handicaps[name] = str(convert_index_to_course(index))
