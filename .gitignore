@@ -1,7 +1,6 @@
 names_mapping.py
 config.py
-venv
 .idea
 handicap-report.xlsx
 problem-names.txt
-.pytest_cache
+.coverage

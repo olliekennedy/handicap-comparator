@@ -58,8 +58,8 @@ def convert_index_to_course(index) -> int:
     return -course_hcp if index[0] == '+' else course_hcp
 
 
-def get_course_handicap(player):
-    index = json.loads(player.content)['Records'][0]['HandicapIndexText']
+def get_course_handicap(player_content):
+    index = json.loads(player_content)['Records'][0]['HandicapIndexText']
     return str(convert_index_to_course(index))
 
 
@@ -160,7 +160,7 @@ def get_handicaps_from_eg(names):
     for name in names:
         found_player = find_player(session, name)
         if len(json.loads(found_player.content)['Records']) == 1:
-            eg_handicaps[name] = get_course_handicap(found_player)
+            eg_handicaps[name] = get_course_handicap(found_player.content)
         else:
             problem_names.append(name)
     write_lines_to_file(problem_names)
