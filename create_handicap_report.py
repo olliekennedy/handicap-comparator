@@ -16,6 +16,7 @@ HEADERS = {
 MASTER_SCOREBOARD_HANDICAP_URL = 'https://www.masterscoreboard.co.uk/results/HandicapList.php?CWID=' + MASTER_SCOREBOARD_CWID
 EG_PLAYER_SEARCH_API_URL = 'https://members.whsplatform.englandgolf.org/api/member/FindPotentialFriends'
 EG_LOGIN_URL = 'https://members.whsplatform.englandgolf.org/layouts/terraces_golfnz/Template.aspx?page=my+golf+login'
+SLOPE = 130
 
 
 def login_to_eg():
@@ -52,14 +53,14 @@ def find_player(s, name):
     return player
 
 
-def convert_index_to_course(index, slope):
-    course_hcp = int(round((float(index) * (float(slope)) / float(113))))
+def convert_index_to_course(index) -> int:
+    course_hcp = int(round((float(index) * (float(SLOPE)) / float(113))))
     return -course_hcp if index[0] == '+' else course_hcp
 
 
 def get_course_handicap(player):
     index = json.loads(player.content)['Records'][0]['HandicapIndexText']
-    return str(convert_index_to_course(index, 130))
+    return str(convert_index_to_course(index))
 
 
 def write_to_files(master_handicaps, eg_handicaps):
@@ -72,23 +73,31 @@ def write_to_files(master_handicaps, eg_handicaps):
 def formatted_row_from(name, master_handicaps, eg_handicaps):
     course_raw = eg_handicaps[name] if name in eg_handicaps else ''
     master_raw = master_handicaps[name]
-    master_higher_or_lower = higher_or_lower(course_raw, master_raw)
+    higher_or_lower = master_higher_or_lower(course=course_raw, master=master_raw)
     course_handicap = add_plus_to_plus_handicaps(course_raw)
     master_handicap = add_plus_to_plus_handicaps(master_raw)
-    return [name, course_handicap, master_handicap, master_higher_or_lower]
+    return [name, course_handicap, master_handicap, higher_or_lower]
 
 
-def higher_or_lower(course, master):
+DIFF = {
+    'higher': 'Higher',
+    'lower': 'Lower',
+    'same': 'Same',
+    'n/a': 'N / A',
+}
+
+
+def master_higher_or_lower(course, master):
     if course and master:
         if int(master) > int(course):
-            diff = 'Higher'
+            diff = 'higher'
         elif int(master) < int(course):
-            diff = 'Lower'
+            diff = 'lower'
         else:
-            diff = 'Same'
+            diff = 'same'
     else:
-        diff = 'N / A'
-    return diff
+        diff = 'n/a'
+    return DIFF[diff]
 
 
 def add_plus_to_plus_handicaps(course_raw):

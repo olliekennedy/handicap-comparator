@@ -4,3 +4,4 @@ venv
 .idea
 handicap-report.xlsx
 problem-names.txt
+.pytest_cache
