@@ -38,18 +38,6 @@ def login_to_eg() -> requests.Session:
     return session
 
 
-def find_player(s, name) -> list:
-    search_name = NAMES_MAPPING[name] if name in NAMES_MAPPING else name
-    params = {'clubId': EG_CLUB_ID, 'searchName': search_name, 'userPassportId': ''}
-    player = get_player_records(s, params)
-    if len(player) > 1:
-        print("WARNING: too many results for search " + name + " on England Golf")
-    if not player:
-        print("WARNING: failed to find player with name " + name + " on England Golf")
-
-    return player
-
-
 def get_player_records(s, params):
     return json.loads(s.get(url=EG_PLAYER_SEARCH_API_URL, params=params).content)['Records']
 
@@ -155,11 +143,16 @@ def get_handicaps_from_eg(names) -> dict[str, str]:
     problem_names = []
     eg_handicaps = {}
     for name in names:
-        found_players = find_player(session, name)
-        if len(found_players) == 1:
-            index = found_players[0]['HandicapIndexText']
+        search_name = NAMES_MAPPING[name] if name in NAMES_MAPPING else name
+        params = {'clubId': EG_CLUB_ID, 'searchName': search_name, 'userPassportId': ''}
+        player = get_player_records(session, params)
+        if len(player) > 1:
+            print("WARNING: too many results for search " + name + " on England Golf")
+        elif len(player) == 1:
+            index = player[0]['HandicapIndexText']
             eg_handicaps[name] = str(convert_index_to_course(index))
         else:
+            print("WARNING: failed to find player with name " + name + " on England Golf")
             problem_names.append(name)
     write_lines_to_file(problem_names)
     return eg_handicaps
