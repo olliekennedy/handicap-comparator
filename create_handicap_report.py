@@ -42,7 +42,7 @@ def get_player_records(s, params):
 
 
 def convert_index_to_course(index) -> int:
-    course_hcp = int(round((float(index) * (float(SLOPE_INDEX)) / float(113))))
+    course_hcp = round_up_on_halves(float(index) * (float(SLOPE_INDEX)) / float(113))
     return -course_hcp if index[0] == '+' else course_hcp
 
 
@@ -129,12 +129,20 @@ def get_handicaps_from_master() -> dict[str, str]:
     results = {}
     for row in bs.select('tr')[1:]:
         handicap = row.select_one('td:nth-of-type(2)').text
+        name = row.select_one('td').text
         if handicap[0] == '+':
-            handicap = str(-int(float(handicap[1:])))
+            handicap = str(-round_up_on_halves(float(handicap[1:])))
         else:
-            handicap = str(int(float(handicap)))
-        results[row.select_one('td').text] = handicap
+            handicap = str(round_up_on_halves(float(handicap)))
+        results[name] = handicap
     return results
+
+
+def round_up_on_halves(val):
+    val_half_or_above = (float(val) % 1) >= 0.5
+    if val_half_or_above:
+        return val.__ceil__()
+    return round(val)
 
 
 def get_handicaps_from_eg(names) -> dict[str, str]:
