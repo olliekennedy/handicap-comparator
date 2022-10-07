@@ -13,6 +13,20 @@ too_many_players = [
      'IsFriendRequestError': False, 'FriendRequestErrorMessage': None,
      'ProfileURL': 'sssssss', 'ShowProfileLink': True}
 ]
+too_many_players_all_but_one_pending = [
+    {'Rank': 0, 'PassportId': 2352333, 'Name': 'Woods, Tiger', 'IsFriend': False, 'Gender': 'Male',
+     'HandicapIndexText': '20.7', 'HomeClubName': 'Augusta', 'FriendRequestId': None,
+     'IsFriendRequestError': False, 'FriendRequestErrorMessage': None,
+     'ProfileURL': 'ssssss', 'ShowProfileLink': True},
+    {'Rank': 0, 'PassportId': 219742, 'Name': 'Woods, Tiger', 'IsFriend': False, 'Gender': 'Male',
+     'HandicapIndexText': 'Pending', 'HomeClubName': 'Augusta', 'FriendRequestId': None,
+     'IsFriendRequestError': False, 'FriendRequestErrorMessage': None,
+     'ProfileURL': 'sssssss', 'ShowProfileLink': True},
+    {'Rank': 0, 'PassportId': 239234, 'Name': 'Woods, Tiger', 'IsFriend': False, 'Gender': 'Male',
+     'HandicapIndexText': 'Pending', 'HomeClubName': 'Augusta', 'FriendRequestId': None,
+     'IsFriendRequestError': False, 'FriendRequestErrorMessage': None,
+     'ProfileURL': 'sssssss', 'ShowProfileLink': True}
+]
 one_player = [
     {'Rank': 0, 'PassportId': 1245135, 'Name': 'Els, Ernie', 'IsFriend': False, 'Gender': 'Male',
      'HandicapIndexText': '20.7', 'HomeClubName': 'Augusta', 'FriendRequestId': None,
@@ -29,6 +43,15 @@ def test_too_many(capfd):
     assert get_handicaps_from_eg(['Woods, Tiger', 'Els, Ernie']) == expected_output
     out, err = capfd.readouterr()
     assert out == "WARNING: too many results for search Woods, Tiger on England Golf\n"
+
+
+def test_too_many_players_all_but_one_pending(capfd):
+    create_handicap_report.login_to_eg = Mock()
+    create_handicap_report.get_player_records = Mock(side_effect=[too_many_players_all_but_one_pending])
+    create_handicap_report.convert_index_to_course = Mock(return_value='24')
+    assert get_handicaps_from_eg(['Woods, Tiger']) == {'Woods, Tiger': '24'}
+    out, err = capfd.readouterr()
+    assert out == ""
 
 
 def test_none(capfd):

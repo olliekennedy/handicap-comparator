@@ -145,20 +145,26 @@ def golf_round(val: float) -> int:
 
 def get_handicaps_from_eg(names) -> dict[str, str]:
     session = login_to_eg()
-    problem_names = []
+    problem_names = {}
     eg_handicaps = {}
     for name in names:
         search_name = NAMES_MAPPING[name] if name in NAMES_MAPPING else name
         params = {'clubId': EG_CLUB_ID, 'searchName': search_name, 'userPassportId': ''}
         player = get_player_records(session, params)
         if len(player) > 1:
+            handicaps = [pl['HandicapIndexText'] for pl in player]
+            if handicaps.count('Pending') == len(handicaps) - 1:
+                index = player[0]['HandicapIndexText']
+                eg_handicaps[name] = str(convert_index_to_course(index))
+                continue
             print("WARNING: too many results for search " + name + " on England Golf")
+            problem_names[name] = 'England Golf - too many results when searching for player'
         elif len(player) == 1:
             index = player[0]['HandicapIndexText']
             eg_handicaps[name] = str(convert_index_to_course(index))
         else:
             print("WARNING: failed to find player with name " + name + " on England Golf")
-            problem_names.append(name)
+            problem_names[name] = 'England Golf - no results when searching for player'
     write_problem_names_file(problem_names)
     return eg_handicaps
 
@@ -167,8 +173,8 @@ def write_problem_names_file(problem_names):
     if os.path.exists('problem-names.txt'):
         os.remove('problem-names.txt')
     with open('problem-names.txt', 'w') as file:
-        for name in problem_names:
-            file.write(name + '\n')
+        for name, reason in problem_names.items():
+            file.write(name + ': ' + reason + '\n')
 
 
 def main():
