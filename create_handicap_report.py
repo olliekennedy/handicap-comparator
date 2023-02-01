@@ -15,12 +15,17 @@ HEADERS = {
 }
 MASTER_SCOREBOARD_HANDICAP_URL = 'https://www.masterscoreboard.co.uk/results/HandicapList.php?CWID=' + MASTER_SCOREBOARD_CWID
 EG_PLAYER_SEARCH_API_URL = 'https://members.whsplatform.englandgolf.org/api/member/FindPotentialFriends'
-EG_LOGIN_URL = 'https://members.whsplatform.englandgolf.org/layouts/terraces_golfnz/Template.aspx?page=my+golf+login'
+EG_LOGIN_SOUP_URL = 'https://members.whsplatform.englandgolf.org/igolf-login'
+EG_LOGIN_URL = 'https://members.whsplatform.englandgolf.org/layouts/terraces_golfnz/Template.aspx'
 
 
 def login_to_eg() -> requests.Session:
     session = requests.Session()
-    login_soup = BeautifulSoup(session.get(EG_LOGIN_URL, headers=HEADERS).content, features="html.parser")
+    login_soup = BeautifulSoup(session.get(EG_LOGIN_SOUP_URL, headers=HEADERS).content, features="html.parser")
+
+    params = {
+        'page': 'igolf login',
+    }
     login_data = {
         '__EVENTTARGET': '',
         '__EVENTARGUMENT': '',
@@ -29,11 +34,11 @@ def login_to_eg() -> requests.Session:
         '__SCROLLPOSITIONX': '0',
         '__SCROLLPOSITIONY': '0',
         '__EVENTVALIDATION': (login_soup.find('input', attrs={'name': '__EVENTVALIDATION'})['value']),
-        'ctl36$tbMembershipNumber': EG_MEMBERSHIP_NUMBER,
-        'ctl36$tbPassword': EG_PASSWORD,
-        'ctl36$btnLogin': 'Login'
+        'ctl51$tbMembershipNumber': EG_MEMBERSHIP_NUMBER,
+        'ctl51$tbPassword': EG_PASSWORD,
+        'ctl51$btnLogin': 'Login',
     }
-    session.post(EG_LOGIN_URL, data=login_data)
+    session.post(EG_LOGIN_URL, params=params, data=login_data)
     return session
 
 
