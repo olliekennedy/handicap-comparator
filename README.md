@@ -17,7 +17,7 @@ This tool allows you compare the handicaps held for players in Master Scoreboard
 - Create a copy of both _**config.py.example**_ and _**names_mapping.py.example**_, removing the _**.example**_ file extensions
   - This should leave you with _**config.py**_ and _**names_mapping.py**_
   - In config.py, change each of the values to your own according to the instructions in the file
-- `cd` to the project in terminal and `pip install -r .\requirements.txt`
+- `cd` to the project in terminal and `pip install -r ./requirements.txt`
 
 ### Usage:
 - **Windows** - double click ***run_report.bat***
