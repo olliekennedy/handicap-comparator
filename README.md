@@ -31,9 +31,16 @@ After running the script, these players will show in the file 'problem-names.txt
 - They don't exist on England Golf
 - The name they use on England Golf is different to Master Scoreboard
 
-**How to Resolve**:
-- Go to MyEG and use the member search tool to find the player - they will most likely be listed under a different name/nickname
-- If it turns out the names in the two systems are different, such as 'Smith, Johnny ' and 'Smith, John':
-  - Add a row in 'names_mapping.py', formatted exactly the same as the others, with their name as it appears in Master on the left, and as it appears on EG on the right
-  - This should remove their name from problem-names.txt
-  - If they don't exist on EG then there's nothing you can do
+#### Problem Name Resolution
+```mermaid
+  flowchart LR
+      START([Run report]) --> APPEAR{Name appears on\n problem-names.txt?}
+      APPEAR -- No --> WOO[Fantastic]
+      APPEAR -- Yes --> SEARCH
+      SEARCH[Go to MyEG and use\n the member search tool\n to find the player] --> EXIST{Do\n they exist \non MyEG?}
+      EXIST -- No --> NOT_MEMBER([They are not a member\n of your club - only\n members from your club\n can be found on MyEG])
+      EXIST -- Yes --> DIFFERENT{Is the name\n different to the one on \nMaster Scoreboard?}
+      DIFFERENT -- No --> UNKNOWN([Unknown problem -\n raise an issue])
+      DIFFERENT -- Yes --> CHANGE[Change the name\n on Master Scoreboard]
+      CHANGE --> START
+```
