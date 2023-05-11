@@ -34,7 +34,8 @@ After running the script, these players will show in the file 'problem-names.txt
 #### Problem Name Resolution
 ```mermaid
   flowchart LR
-      START([Run report]) --> APPEAR{Name appears on\n problem-names.txt?}
+      style START fill:#7ED06B,stroke:#000,stroke-width:1px
+      START([START:\nRun report]) --> APPEAR{Name appears on\n problem-names.txt?}
       APPEAR -- No --> WOO[Fantastic]
       APPEAR -- Yes --> SEARCH
       SEARCH[Go to MyEG and use\n the member search tool\n to find the player] --> EXIST{Do\n they exist \non MyEG?}
