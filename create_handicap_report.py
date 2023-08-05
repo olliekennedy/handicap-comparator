@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import json
 import os
+import time
 
 import pandas as pd
 import requests
@@ -9,7 +10,7 @@ from bs4 import BeautifulSoup
 from config import *
 from names_mapping import NAMES_MAPPING
 
-HEADERS = {
+DEFAULT_HEADERS = {
     'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) '
                   'Chrome/103.0.0.0 Safari/537.36 '
 }
@@ -21,7 +22,7 @@ EG_LOGIN_URL = 'https://members.whsplatform.englandgolf.org/layouts/terraces_gol
 
 def login_to_eg() -> requests.Session:
     session = requests.Session()
-    login_soup = BeautifulSoup(session.get(EG_LOGIN_SOUP_URL, headers=HEADERS).content, features="html.parser")
+    login_soup = BeautifulSoup(session.get(EG_LOGIN_SOUP_URL, headers=DEFAULT_HEADERS).content, features="html.parser")
 
     params = {
         'page': 'igolf login',
@@ -32,18 +33,41 @@ def login_to_eg() -> requests.Session:
         '__VIEWSTATE': (login_soup.find('input', attrs={'name': '__VIEWSTATE'})['value']),
         '__VIEWSTATEGENERATOR': (login_soup.find('input', attrs={'name': '__VIEWSTATEGENERATOR'})['value']),
         '__SCROLLPOSITIONX': '0',
-        '__SCROLLPOSITIONY': '0',
+        '__SCROLLPOSITIONY': '600',
         '__EVENTVALIDATION': (login_soup.find('input', attrs={'name': '__EVENTVALIDATION'})['value']),
-        'ctl51$tbMembershipNumber': EG_MEMBERSHIP_NUMBER,
-        'ctl51$tbPassword': EG_PASSWORD,
-        'ctl51$btnLogin': 'Login',
+        'ctl55$tbMembershipNumber': EG_MEMBERSHIP_NUMBER,
+        'ctl55$tbPassword': EG_PASSWORD,
+        'ctl55$btnLogin': 'Login',
     }
-    session.post(EG_LOGIN_URL, params=params, data=login_data)
+
+    session.post(EG_LOGIN_URL,
+                 params=params,
+                 data=login_data,
+                 headers={**DEFAULT_HEADERS, **{"Host": "members.whsplatform.englandgolf.org",
+                                                "Origin": "https://members.whsplatform.englandgolf.org",
+                                                "Referer": "https://members.whsplatform.englandgolf.org/igolf-login",
+                                                "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,"
+                                                          "image/avif,image/webp,image/apng,*/*;q=0.8,"
+                                                          "application/signed-exchange;v=b3;q=0.7",
+                                                "Accept-Encoding": "gzip, deflate, br", "Cache-Control": "max-age=0",
+                                                "Connection": "keep-alive",
+                                                "Accept-Language": "en-GB,en-US;q=0.9,en;q=0.8,sk;q=0.7"}})
+
+    if session.cookies.get("CWApiToken") is None:
+        raise MyEgSessionIllegalState("ERROR: Missing CWApiToken cookie")
+
     return session
 
 
-def get_player_records(s, params):
-    return json.loads(s.get(url=EG_PLAYER_SEARCH_API_URL, params=params).content)['Records']
+class MyEgSessionIllegalState(Exception):
+    pass
+
+
+def get_player_records(session, params):
+    raw = session.get(url=EG_PLAYER_SEARCH_API_URL, params=params,
+                      headers={**DEFAULT_HEADERS, **{'accept': 'application/json', 'content-type': 'application/json'}})
+    result = json.loads(raw.content)
+    return result['Records']
 
 
 def convert_index_to_course(index) -> int:
@@ -102,7 +126,7 @@ def login_to_master_scoreboard() -> requests.Session:
     login_url = 'https://www.masterscoreboard.co.uk/SocietyIndex.php?CWID=' + MASTER_SCOREBOARD_CWID
 
     s = requests.Session()
-    res = s.get(login_url, headers=HEADERS)
+    res = s.get(login_url, headers=DEFAULT_HEADERS)
     soup = BeautifulSoup(res.content, features="html.parser")
     login_path = soup.find('form').get('action')
     params = soup.find('input', attrs={'name': 'Params'})['value']
@@ -114,20 +138,18 @@ def login_to_master_scoreboard() -> requests.Session:
         'Referer': 'https://www.masterscoreboard.co.uk/SocietyIndex.php?CWID=' + MASTER_SCOREBOARD_CWID,
         'sec-ch-ua': '".Not/A)Brand";v="99", "Google Chrome";v="103", "Chromium";v="103"',
         'sec-ch-ua-mobile': '?0',
-        'sec-ch-ua-platform': '"macOS"',
-        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) '
-                      'Chrome/103.0.0.0 Safari/537.36 '
+        'sec-ch-ua-platform': '"macOS"'
     }
 
     full_login_url = 'https://www.masterscoreboard.co.uk/' + login_path
-    s.post(full_login_url, data=login_data, headers=post_headers)
+    s.post(full_login_url, data=login_data, headers={**DEFAULT_HEADERS, **post_headers})
 
     return s
 
 
 def get_handicaps_from_master() -> dict[str, str]:
     session = login_to_master_scoreboard()
-    response = session.get(MASTER_SCOREBOARD_HANDICAP_URL, headers=HEADERS)
+    response = session.get(MASTER_SCOREBOARD_HANDICAP_URL, headers=DEFAULT_HEADERS)
     handicap_soup = BeautifulSoup(response.content, features="html.parser")
     table = handicap_soup.find('table', id='desktophcaplist')
     bs = BeautifulSoup('<html>' + str(table) + '</html>', features="html.parser")
@@ -162,13 +184,16 @@ def get_handicaps_from_eg(names) -> dict[str, str]:
                 index = player[0]['HandicapIndexText']
                 eg_handicaps[name] = str(convert_index_to_course(index))
                 continue
-            print("WARNING: too many results for search " + name + " on England Golf")
+            print("WARNING: too many results for search [" + name + "] on England Golf")
             problem_names[name] = 'England Golf - too many results when searching for player'
         elif len(player) == 1:
             index = player[0]['HandicapIndexText']
-            eg_handicaps[name] = str(convert_index_to_course(index))
+            if index != 'Pending':
+                eg_handicaps[name] = str(convert_index_to_course(index))
+            else:
+                print("WARNING: Found player [" + name + "] with a pending handicap")
         else:
-            print("WARNING: failed to find player with name " + name + " on England Golf")
+            print("WARNING: failed to find player with name [" + name + "] on England Golf")
             problem_names[name] = 'England Golf - no results when searching for player'
     write_problem_names_file(problem_names)
     return eg_handicaps
@@ -182,12 +207,31 @@ def write_problem_names_file(problem_names):
             file.write(name + ': ' + reason + '\n')
 
 
+def trim_names_from(master_handicaps):
+
+    return list(map(str.strip, master_handicaps.keys()))
+
+
 def main():
     master_handicaps = get_handicaps_from_master()
-    names = master_handicaps.keys()
+    names = trim_names_from(master_handicaps)
     eg_handicaps = get_handicaps_from_eg(names)
     write_handicaps_to_files(master_handicaps, eg_handicaps)
 
 
 if __name__ == '__main__':
-    main()
+    try:
+        start = time.time()
+        main()
+        elapsed = time.time() - start
+        print("Completed in " + str(round(elapsed, 2)) + " secs. Press any key to exit...")
+        input()
+    except BaseException:
+        import sys
+
+        print(sys.exc_info()[0])
+        import traceback
+
+        print(traceback.format_exc())
+        print("Press Enter to continue ...")
+        input()

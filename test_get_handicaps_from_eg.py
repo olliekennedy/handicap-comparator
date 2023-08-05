@@ -42,7 +42,7 @@ def test_too_many(capfd):
     create_handicap_report.convert_index_to_course = Mock(return_value='24')
     assert get_handicaps_from_eg(['Woods, Tiger', 'Els, Ernie']) == expected_output
     out, err = capfd.readouterr()
-    assert out == "WARNING: too many results for search Woods, Tiger on England Golf\n"
+    assert out == "WARNING: too many results for search [Woods, Tiger] on England Golf\n"
 
 
 def test_too_many_players_all_but_one_pending(capfd):
@@ -60,7 +60,7 @@ def test_none(capfd):
     create_handicap_report.convert_index_to_course = Mock(return_value='24')
     assert get_handicaps_from_eg(['Woods, Tiger', 'Els, Ernie']) == expected_output
     out, err = capfd.readouterr()
-    assert out == "WARNING: failed to find player with name Woods, Tiger on England Golf\n"
+    assert out == "WARNING: failed to find player with name [Woods, Tiger] on England Golf\n"
 
 
 def xtest_one(capfd):
