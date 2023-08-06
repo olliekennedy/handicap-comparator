@@ -155,14 +155,19 @@ def get_handicaps_from_master() -> dict[str, str]:
     bs = BeautifulSoup('<html>' + str(table) + '</html>', features="html.parser")
     results = {}
     for row in bs.select('tr')[1:]:
-        handicap = row.select_one('td:nth-of-type(2)').text
-        name = row.select_one('td').text
-        if handicap[0] == '+':
-            handicap = str(-golf_round(float(handicap[1:])))
-        else:
-            handicap = str(golf_round(float(handicap)))
-        results[name] = handicap
+        name = get_master_scoreboard_name_from(row)
+        results[name] = get_master_scoreboard_handicap_from(row)
     return results
+
+
+def get_master_scoreboard_handicap_from(row) -> str:
+    raw_from_html = row.select_one('td:nth-of-type(2)').text
+    handicap = -golf_round(float(raw_from_html[1:])) if raw_from_html[0] == '+' else golf_round(float(raw_from_html))
+    return str(handicap)
+
+
+def get_master_scoreboard_name_from(row) -> str:
+    return row.select_one('td').text.strip()
 
 
 def golf_round(val: float) -> int:
@@ -208,7 +213,6 @@ def write_problem_names_file(problem_names):
 
 
 def trim_names_from(master_handicaps):
-
     return list(map(str.strip, master_handicaps.keys()))
 
 
