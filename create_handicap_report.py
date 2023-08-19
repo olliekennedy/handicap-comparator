@@ -2,6 +2,7 @@
 import json
 import os
 import time
+import re
 
 import pandas as pd
 import requests
@@ -35,9 +36,10 @@ def login_to_eg() -> requests.Session:
         '__SCROLLPOSITIONX': '0',
         '__SCROLLPOSITIONY': '600',
         '__EVENTVALIDATION': (login_soup.find('input', attrs={'name': '__EVENTVALIDATION'})['value']),
-        'ctl55$tbMembershipNumber': EG_MEMBERSHIP_NUMBER,
-        'ctl55$tbPassword': EG_PASSWORD,
-        'ctl55$btnLogin': 'Login',
+        # Looks like these ctlXX$ tags are dynamic, W/O them being correct it seems to stop us from getting the ApiToken
+        grab_login_fields(login_soup, "tbMembershipNumber"): EG_MEMBERSHIP_NUMBER,
+        grab_login_fields(login_soup, "tbPassword"): EG_PASSWORD,
+        grab_login_fields(login_soup, "btnLogin"): 'Login',
     }
 
     session.post(EG_LOGIN_URL,
@@ -49,18 +51,23 @@ def login_to_eg() -> requests.Session:
                                                 "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,"
                                                           "image/avif,image/webp,image/apng,*/*;q=0.8,"
                                                           "application/signed-exchange;v=b3;q=0.7",
-                                                "Accept-Encoding": "gzip, deflate, br", "Cache-Control": "max-age=0",
+                                                "Accept-Encoding": "gzip, deflate, br",
+                                                "Cache-Control": "max-age=0",
                                                 "Connection": "keep-alive",
                                                 "Accept-Language": "en-GB,en-US;q=0.9,en;q=0.8,sk;q=0.7"}})
 
     if session.cookies.get("CWApiToken") is None:
-        raise MyEgSessionIllegalState("ERROR: Missing CWApiToken cookie")
+        raise MyEgSessionProblem("ERROR: Missing CWApiToken cookie")
 
     return session
 
 
-class MyEgSessionIllegalState(Exception):
-    pass
+def grab_login_fields(soup: BeautifulSoup, field: str) -> str:
+    regex = re.compile(r"ctl[0-9]+\$" + field, re.IGNORECASE)
+    matches = soup.find_all('input', {'name': regex})
+    if len(matches) == 0:
+        raise MyEgUnableToFindCtrTagsProblem("ERROR: Unable to find anything for " + field)
+    return matches[0]["name"]
 
 
 def get_player_records(session, params):
@@ -214,6 +221,14 @@ def write_problem_names_file(problem_names):
 
 def trim_names_from(master_handicaps):
     return list(map(str.strip, master_handicaps.keys()))
+
+
+class MyEgSessionProblem(Exception):
+    pass
+
+
+class MyEgUnableToFindCtrTagsProblem(Exception):
+    pass
 
 
 def main():
