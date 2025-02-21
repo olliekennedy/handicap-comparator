@@ -1,5 +1,7 @@
 from unittest.mock import Mock
 
+from bs4 import BeautifulSoup
+
 import create_handicap_report
 from create_handicap_report import get_handicaps_from_eg
 
@@ -52,6 +54,13 @@ def test_too_many_players_all_but_one_pending(capfd):
     assert get_handicaps_from_eg(['Woods, Tiger']) == {'Woods, Tiger': '24'}
     out, err = capfd.readouterr()
     assert out == ""
+
+
+def test_getting_the_ctl_tags_for_login_from_the_html(capfd):
+    fake_html = "<div><label>Membership Number</label><input name=\"ctl56$tbMembershipNumber\" type=\"text\" " \
+                "id=\"ctl56_tbMembershipNumber\"></div> "
+    result = create_handicap_report.grab_login_fields(BeautifulSoup(fake_html), "tbMembershipNumber")
+    assert result == "ctl56$tbMembershipNumber"
 
 
 def test_none(capfd):

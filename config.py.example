@@ -15,3 +15,5 @@ EG_CLUB_ID = '223923'
 
 """Your club's slope index - use the online tool to find it: https://www.randa.org/course-handicap-calculator"""
 SLOPE_INDEX = 130
+COURSE_RATING = 70.6
+PAR = 71
