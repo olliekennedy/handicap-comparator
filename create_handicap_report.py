@@ -15,47 +15,45 @@ DEFAULT_HEADERS = {
                   'Chrome/103.0.0.0 Safari/537.36 '
 }
 MASTER_SCOREBOARD_HANDICAP_URL = 'https://www.masterscoreboard.co.uk/results/HandicapList.php?CWID=' + MASTER_SCOREBOARD_CWID
-EG_PLAYER_SEARCH_API_URL = 'https://members.whsplatform.englandgolf.org/api/member/FindPotentialFriends'
+EG_PLAYER_SEARCH_API_URL = 'https://www.englandgolf.org/api/member/FindPotentialFriends'
 EG_LOGIN_SOUP_URL = 'https://members.whsplatform.englandgolf.org/igolf-login'
 EG_LOGIN_URL = 'https://members.whsplatform.englandgolf.org/layouts/terraces_golfnz/Template.aspx'
 
 
 def login_to_eg() -> requests.Session:
     session = requests.Session()
-    login_soup = BeautifulSoup(session.get(EG_LOGIN_SOUP_URL, headers=DEFAULT_HEADERS).content, features="html.parser")
-
-    params = {
-        'page': 'igolf login',
+    login_url = "https://www.englandgolf.org/my-golf-login"
+    post_url = "https://www.englandgolf.org/layouts/terraces_eg/Template.aspx?page=My+Golf+Login"
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36',
+        'Origin': 'https://www.englandgolf.org',
+        'Referer': login_url,
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+        'Accept-Language': 'en-GB,en-US;q=0.9,en;q=0.8',
+        'Cache-Control': 'max-age=0',
+        'Connection': 'keep-alive',
     }
+
+    resp = session.get(login_url, headers=headers)
+    soup = BeautifulSoup(resp.content, features="html.parser")
     login_data = {
         '__EVENTTARGET': '',
         '__EVENTARGUMENT': '',
-        '__VIEWSTATE': (login_soup.find('input', attrs={'name': '__VIEWSTATE'})['value']),
-        '__VIEWSTATEGENERATOR': (login_soup.find('input', attrs={'name': '__VIEWSTATEGENERATOR'})['value']),
+        '__VIEWSTATE': soup.find('input', attrs={'name': '__VIEWSTATE'})['value'],
+        '__VIEWSTATEGENERATOR': soup.find('input', attrs={'name': '__VIEWSTATEGENERATOR'})['value'],
         '__SCROLLPOSITIONX': '0',
-        '__SCROLLPOSITIONY': '600',
-        '__EVENTVALIDATION': (login_soup.find('input', attrs={'name': '__EVENTVALIDATION'})['value']),
-        'ctl55$tbMembershipNumber': EG_MEMBERSHIP_NUMBER,
-        'ctl55$tbPassword': EG_PASSWORD,
-        'ctl55$btnLogin': 'Login',
+        '__SCROLLPOSITIONY': '0',
+        '__EVENTVALIDATION': soup.find('input', attrs={'name': '__EVENTVALIDATION'})['value'],
+        'ctl74$tbMembershipNumber': EG_MEMBERSHIP_NUMBER,
+        'ctl74$tbPassword': EG_PASSWORD,
+        'ctl74$btnLogin': 'Login',
     }
 
-    session.post(EG_LOGIN_URL,
-                 params=params,
-                 data=login_data,
-                 headers={**DEFAULT_HEADERS, **{"Host": "members.whsplatform.englandgolf.org",
-                                                "Origin": "https://members.whsplatform.englandgolf.org",
-                                                "Referer": "https://members.whsplatform.englandgolf.org/igolf-login",
-                                                "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,"
-                                                          "image/avif,image/webp,image/apng,*/*;q=0.8,"
-                                                          "application/signed-exchange;v=b3;q=0.7",
-                                                "Accept-Encoding": "gzip, deflate, br", "Cache-Control": "max-age=0",
-                                                "Connection": "keep-alive",
-                                                "Accept-Language": "en-GB,en-US;q=0.9,en;q=0.8,sk;q=0.7"}})
+    session.post(post_url, data=login_data, headers=headers)
 
-    if session.cookies.get("CWApiToken") is None:
-        raise MyEgSessionIllegalState("ERROR: Missing CWApiToken cookie")
-
+    if not session.cookies:
+        raise MyEgSessionIllegalState("ERROR: Login failed, no cookies set")
     return session
 
 
@@ -180,8 +178,8 @@ def get_handicaps_from_eg(names) -> dict[str, str]:
     problem_names = {}
     eg_handicaps = {}
     for name in names:
-        search_name = NAMES_MAPPING[name] if name in NAMES_MAPPING else name
-        params = {'clubId': EG_CLUB_ID, 'searchName': search_name, 'userPassportId': ''}
+        search_name = (NAMES_MAPPING[name] if name in NAMES_MAPPING else name).replace(' ', '%20').replace(',', '%2C')
+        params = {'clubId': EG_CLUB_ID, 'searchName': search_name, 'userPassportId': '', 'searchOnlyAcrossMemberClubs': 'false'}
         player = get_player_records(session, params)
         if len(player) > 1:
             handicaps = [pl['HandicapIndexText'] for pl in player]
