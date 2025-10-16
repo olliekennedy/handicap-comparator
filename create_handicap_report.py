@@ -178,7 +178,7 @@ def get_handicaps_from_eg(names) -> dict[str, str]:
     problem_names = {}
     eg_handicaps = {}
     for name in names:
-        search_name = (NAMES_MAPPING[name] if name in NAMES_MAPPING else name).replace(' ', '%20').replace(',', '%2C')
+        search_name = (NAMES_MAPPING[name] if name in NAMES_MAPPING else name)
         params = {'clubId': EG_CLUB_ID, 'searchName': search_name, 'userPassportId': '', 'searchOnlyAcrossMemberClubs': 'false'}
         player = get_player_records(session, params)
         if len(player) > 1:
